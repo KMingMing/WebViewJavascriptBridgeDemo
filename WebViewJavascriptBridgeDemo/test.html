@@ -1,0 +1,77 @@
+<!doctype html>
+<html><head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+        <style type='text/css'>
+            html { font-family:Helvetica; color:#222; }
+            h1 { color:steelblue; font-size:21px; margin-top:24px; }
+            button { margin:0 3px 10px; font-size:12px; }
+            .logLine { border-bottom:1px solid #ccc; padding:4px 2px; font-family:courier; font-size:11px; }
+            </style>
+</head><body>
+    <h1>WebViewJavascriptBridge Demo</h1>
+    <br>
+    <script>
+        
+        window.onerror = function(err) {
+            log('window.onerror: ' + err)
+        }
+    
+    function setupWebViewJavascriptBridge(callback) {
+        if (window.WebViewJavascriptBridge) { return callback(WebViewJavascriptBridge); }
+        if (window.WVJBCallbacks) { return window.WVJBCallbacks.push(callback); }
+        window.WVJBCallbacks = [callback];
+        var WVJBIframe = document.createElement('iframe');
+        WVJBIframe.style.display = 'none';
+        WVJBIframe.src = 'https://__bridge_loaded__';
+        document.documentElement.appendChild(WVJBIframe);
+        setTimeout(function() { document.documentElement.removeChild(WVJBIframe) }, 0)
+    }
+    
+    
+    
+    setupWebViewJavascriptBridge(function(bridge) {
+        
+         var uniqueId = 1
+                                 
+         function log(message, data)
+         {
+             var log = document.getElementById('log')
+             var el = document.createElement('div')
+             el.className = 'logLine'
+             el.innerHTML = uniqueId++ + '. ' + message + ':<br/>' + JSON.stringify(data)
+             if (log.children.length) { log.insertBefore(el, log.children[0]) }
+             else { log.appendChild(el) }
+         }
+         
+         
+         bridge.registerHandler('testJavascriptHandler', function(data, responseCallback) {
+            var responseData = { 'Javascript Says':'我是js来的数据' }
+            log('JS返回到客户端的数据:', responseData)
+            responseCallback(responseData)
+            })
+         
+         document.body.appendChild(document.createElement('br'))
+         
+         var callbackButton = document.getElementById('buttons').appendChild(document.createElement('button'))
+         callbackButton.innerHTML = '调用客户端方法:testObjcCallback'
+         callbackButton.onclick = function(e) {
+         e.preventDefault()
+         bridge.callHandler('testObjcCallback', {'foo': 'bar'}, function(response) {
+                            log('JS从客户端获取了数据', response)
+                            })
+         }
+                 
+         var callbackButton1 = document.getElementById('buttons').appendChild(document.createElement('button'))
+         callbackButton1.innerHTML = '清除屏幕'
+         callbackButton1.onclick = function(e) {
+         e.preventDefault()
+         var log = document.getElementById('log')
+         log.innerHTML = "";
+         uniqueId = 1;
+         }
+                                 
+         })
+        </script>
+    <div id='buttons'></div> <div id='log'></div>
+</body></html>
